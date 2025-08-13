@@ -1,0 +1,44 @@
+-- Show each book with total fines collected for it
+SELECT b.Title,
+       (SELECT SUM(f.FineAmount)
+        FROM Fines f
+        JOIN IssuedBooks ib ON f.IssueID = ib.IssueID
+        WHERE ib.BookID = b.BookID) AS TotalFine
+FROM Books b;
+
+-- Members who have issued at least one book
+SELECT Name
+FROM Members
+WHERE MemberID IN (
+    SELECT DISTINCT MemberID
+    FROM IssuedBooks
+);
+
+-- Books that have been issued at least once
+SELECT Title
+FROM Books b
+WHERE EXISTS (
+    SELECT 1
+    FROM IssuedBooks ib
+    WHERE ib.BookID = b.BookID
+);
+
+-- Average fine per member
+SELECT m.Name, avg_data.AvgFine
+FROM (
+    SELECT ib.MemberID, AVG(f.FineAmount) AS AvgFine
+    FROM IssuedBooks ib
+    JOIN Fines f ON ib.IssueID = f.IssueID
+    GROUP BY ib.MemberID
+) AS avg_data
+JOIN Members m ON avg_data.MemberID = m.MemberID;
+
+-- Members who have paid more than 100 in total fines
+SELECT Name
+FROM Members m
+WHERE (
+    SELECT SUM(f.FineAmount)
+    FROM IssuedBooks ib
+    JOIN Fines f ON ib.IssueID = f.IssueID
+    WHERE ib.MemberID = m.MemberID
+) > 100;
